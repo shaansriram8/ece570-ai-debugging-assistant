@@ -1,0 +1,24 @@
+[
+  {
+    "code": "const arr = undefined;\nconst result = arr.map(x => x * 2);",
+    "error_message": "TypeError: Cannot read property 'map' of undefined",
+    "gold_explanation": "The variable 'arr' is undefined, so calling .map() on it throws a TypeError. This happens because arr was never initialized with an array value.",
+    "gold_suggestion": "Initialize 'arr' as an empty array or check if it's defined before calling .map(). For example: const arr = []; or if (arr) { const result = arr.map(x => x * 2); }",
+    "language": "javascript"
+  },
+  {
+    "code": "def divide(a, b):\n    return a / b\n\nresult = divide(10, 0)",
+    "error_message": "ZeroDivisionError: division by zero",
+    "gold_explanation": "The function attempts to divide by zero when b=0, which is mathematically undefined and causes a ZeroDivisionError in Python.",
+    "gold_suggestion": "Add a check to prevent division by zero: if b == 0: raise ValueError('Cannot divide by zero') or return None/0 based on your use case.",
+    "language": "python"
+  },
+  {
+    "code": "int* ptr = NULL;\n*ptr = 42;",
+    "error_message": "Segmentation fault (core dumped)",
+    "gold_explanation": "The pointer 'ptr' is NULL (uninitialized), and dereferencing it with *ptr attempts to write to memory address 0, causing a segmentation fault.",
+    "gold_suggestion": "Initialize the pointer to a valid memory address before dereferencing: int value = 42; int* ptr = &value; or use dynamic allocation: int* ptr = malloc(sizeof(int));",
+    "language": "c"
+  }
+]
+
