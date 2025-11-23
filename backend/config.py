@@ -9,12 +9,13 @@ class Settings(BaseSettings):
     
     # Hugging Face API
     hf_api_key: str = os.getenv("HF_API_KEY", "")
-    hf_api_base: str = "https://api-inference.huggingface.co/models"
+    hf_api_base: str = "https://router.huggingface.co/v1/chat/completions"  # New router endpoint (OpenAI-compatible)
     
     # Model configuration
-    # NOTE: Update these to match your actual Hugging Face model IDs
-    primary_model: str = "01-ai/Yi-1.5B-Coder"  # Yi-Coder-1.5B as primary code model
-    secondary_model: str = "mistralai/Mistral-7B-Instruct-v0.2"  # Mistral-7B as secondary/fallback
+    # NOTE: Using models that work with the new router API
+    # Router API supports specific models - check https://huggingface.co/docs/api-inference for available models
+    primary_model: str = "meta-llama/Llama-3.2-1B-Instruct"  # Works with router API
+    secondary_model: str = "meta-llama/Llama-3.2-3B-Instruct"  # Alternative that works with router API
     
     # Model parameters
     temperature: float = 0.2

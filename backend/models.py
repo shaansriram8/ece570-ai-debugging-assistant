@@ -8,6 +8,8 @@ class AnalyzeRequest(BaseModel):
     code: str = Field(..., description="Source code with the bug")
     error_message: str = Field(..., description="Error message or stack trace")
     language: Optional[str] = Field(None, description="Programming language (optional)")
+    mode: Optional[str] = Field("detailed", description="Analysis mode: 'quick' (single model) or 'detailed' (both models)")
+    models: Optional[List[str]] = Field(None, description="Optional: Specific models to use (overrides mode if provided)")
 
 
 class ModelMetadata(BaseModel):

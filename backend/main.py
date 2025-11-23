@@ -58,8 +58,17 @@ async def analyze_code(request: AnalyzeRequest) -> AnalyzeResponse:
     start_time = time.time()
     
     try:
-        # Get active models
-        models = get_active_models()
+        # Get active models based on request parameters
+        if request.models:
+            # User specified specific models
+            models = request.models
+        elif request.mode == "quick":
+            # Quick mode: use only primary model
+            models = [settings.primary_model] if settings.primary_model else []
+        else:
+            # Detailed mode (default): use both models
+            models = get_active_models()
+        
         if not models:
             raise HTTPException(
                 status_code=500,
@@ -83,6 +92,15 @@ async def analyze_code(request: AnalyzeRequest) -> AnalyzeResponse:
         # Call models in parallel
         logger.info(f"Calling {len(models)} models in parallel")
         model_responses = await call_multiple_models(prompt, models)
+        
+        # Log model responses for debugging
+        for model_name, (text, latency, error) in model_responses.items():
+            if error:
+                logger.warning(f"Model {model_name} returned error: {error}")
+            elif text:
+                logger.info(f"Model {model_name} returned response (length: {len(text) if text else 0})")
+            else:
+                logger.warning(f"Model {model_name} returned None (no error message)")
         
         # Parse and aggregate responses
         model_parsed, aggregated = process_model_outputs(model_responses)

@@ -28,20 +28,28 @@ async def call_hf_model(
     if not settings.hf_api_key:
         return None, 0.0, "HF_API_KEY not configured"
     
-    api_url = f"{settings.hf_api_base}/{model_name}"
+    # New router API uses OpenAI-compatible chat completions endpoint
+    api_url = settings.hf_api_base  # Already includes full path: https://router.huggingface.co/v1/chat/completions
     headers = {
         "Authorization": f"Bearer {settings.hf_api_key}",
         "Content-Type": "application/json"
     }
     
     model_config = get_model_config(model_name)
+    
+    # New format: OpenAI-compatible chat completions
+    # Use system message for better context and technical accuracy
     payload = {
-        "inputs": prompt,
-        "parameters": {
-            "temperature": model_config["temperature"],
-            "max_new_tokens": model_config["max_new_tokens"],
-            "return_full_text": False
-        }
+        "model": model_name,
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are an expert software debugging assistant. You provide technically accurate, precise explanations of code bugs. Always use correct terminology (e.g., properties vs methods, types, etc.) and ensure your technical facts are correct. Focus on accuracy and clarity."
+            },
+            {"role": "user", "content": prompt}
+        ],
+        "max_tokens": model_config["max_new_tokens"],
+        "temperature": model_config["temperature"]
     }
     
     timeout_seconds = timeout or model_config["timeout"]
@@ -55,17 +63,12 @@ async def call_hf_model(
             
             if response.status_code == 200:
                 result = response.json()
-                # HF API returns different formats, handle common ones
-                if isinstance(result, list) and len(result) > 0:
-                    if "generated_text" in result[0]:
-                        return result[0]["generated_text"], latency_ms, None
-                    elif "text" in result[0]:
-                        return result[0]["text"], latency_ms, None
-                elif isinstance(result, dict):
-                    if "generated_text" in result:
-                        return result["generated_text"], latency_ms, None
-                    elif "text" in result:
-                        return result["text"], latency_ms, None
+                # New format: {"choices": [{"message": {"content": "..."}}]}
+                if isinstance(result, dict) and "choices" in result:
+                    if len(result["choices"]) > 0:
+                        content = result["choices"][0].get("message", {}).get("content", "")
+                        if content:
+                            return content, latency_ms, None
                 
                 # Fallback: try to extract text from response
                 return str(result), latency_ms, None
@@ -120,7 +123,13 @@ def build_analysis_prompt(code: str, error_message: str, language: Optional[str]
     """
     lang_context = f"Language: {language}\n" if language else ""
     
-    prompt = f"""You are an expert debugging assistant. Analyze the following code and error message, then provide a structured response in JSON format.
+    prompt = f"""You are an expert debugging assistant with deep technical knowledge. Analyze the following code and error message with technical precision and accuracy.
+
+CRITICAL REQUIREMENTS:
+- Be technically accurate: Use correct terminology (properties vs methods, types, etc.)
+- Explain the root cause precisely: What exactly is wrong and why
+- Provide actionable fixes: Concrete code changes or debugging steps
+- Verify technical facts: Ensure your explanation is factually correct
 
 {lang_context}Code:
 ```{language or ''}
@@ -132,16 +141,23 @@ Error Message:
 {error_message}
 ```
 
-Please provide a JSON response with the following structure:
+TECHNICAL GUIDANCE:
+- For "is not a function" errors: Distinguish between properties and methods correctly
+- For "undefined/null" errors: Explain the null/undefined state and why it occurred
+- For type errors: Explain the type mismatch precisely
+- For logic errors: Explain the incorrect logic flow
+- Severity: "high" = crashes/breaks execution, "medium" = incorrect behavior, "low" = minor issues
+
+Provide a JSON response with the following structure:
 {{
-  "explanation": "A clear, concise explanation of the root cause of this bug",
-  "suggestion": "A concrete suggested fix or next debugging steps",
+  "explanation": "A technically accurate, precise explanation of the root cause. Use correct terminology and be factually correct.",
+  "suggestion": "A concrete, actionable fix with specific code changes or debugging steps",
   "score": <number between 0-100 indicating confidence in this explanation>,
-  "severity": "low|medium|high" (optional),
-  "bug_type": "type of bug, e.g., 'null reference', 'type error', 'logic error'" (optional)
+  "severity": "low|medium|high" (optional, based on impact: high=crashes, medium=wrong behavior, low=minor),
+  "bug_type": "type of bug, e.g., 'null reference', 'type error', 'logic error', 'syntax error'" (optional)
 }}
 
-Output ONLY the JSON object, nothing else:"""
+Output ONLY the JSON object, nothing else. Ensure all technical details are accurate:"""
     
     return prompt
 

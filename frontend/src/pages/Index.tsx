@@ -27,7 +27,7 @@ const Index = () => {
   const [result, setResult] = useState<AnalysisResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleAnalyze = async (code: string, errorMessage: string, language?: string) => {
+  const handleAnalyze = async (code: string, errorMessage: string, language?: string, mode?: string) => {
     setIsLoading(true);
     setError(null);
     setResult(null);
@@ -35,16 +35,25 @@ const Index = () => {
     try {
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
       
+      const requestBody: any = {
+        code,
+        error_message: errorMessage,
+      };
+      
+      if (language) {
+        requestBody.language = language;
+      }
+      
+      if (mode) {
+        requestBody.mode = mode;
+      }
+      
       const response = await fetch(`${API_BASE_URL}/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          code,
-          error_message: errorMessage,
-          language,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
