@@ -11,11 +11,11 @@ class Settings(BaseSettings):
     hf_api_key: str = os.getenv("HF_API_KEY", "")
     hf_api_base: str = "https://router.huggingface.co/v1/chat/completions"  # New router endpoint (OpenAI-compatible)
     
-    # Model configuration
-    # NOTE: Using models that work with the new router API
+    # Model configuration - Qwen code-specific models only
+    # Using Qwen models optimized for code analysis and debugging
     # Router API supports specific models - check https://huggingface.co/docs/api-inference for available models
-    primary_model: str = "meta-llama/Llama-3.2-1B-Instruct"  # Works with router API
-    secondary_model: str = "meta-llama/Llama-3.2-3B-Instruct"  # Alternative that works with router API
+    primary_model: str = "Qwen/Qwen2.5-Coder-7B-Instruct"  # Qwen code-specific model, 7B parameters
+    secondary_model: str = "Qwen/Qwen2.5-Coder-1.5B-Instruct"  # Qwen code-specific model, 1.5B parameters (if available)
     
     # Model parameters
     temperature: float = 0.2

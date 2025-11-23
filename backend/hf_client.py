@@ -44,7 +44,7 @@ async def call_hf_model(
         "messages": [
             {
                 "role": "system",
-                "content": "You are an expert software debugging assistant. You provide technically accurate, precise explanations of code bugs. Always use correct terminology (e.g., properties vs methods, types, etc.) and ensure your technical facts are correct. Focus on accuracy and clarity."
+                "content": "You are an expert software debugging assistant specializing in code error analysis. You provide technically accurate, precise explanations of code bugs. CRITICAL: Always pay attention to the programming language specified in the user's request - use language-specific syntax, conventions, and terminology. Do NOT confuse languages (e.g., Java vs C++, JavaScript vs TypeScript). Only report actual bugs - do NOT invent errors when code is correct. Always use correct terminology (e.g., properties vs methods, types, etc.) and ensure your technical facts are correct. Focus on accuracy and clarity."
             },
             {"role": "user", "content": prompt}
         ],
@@ -121,7 +121,17 @@ def build_analysis_prompt(code: str, error_message: str, language: Optional[str]
     
     Returns a structured prompt that instructs the model to output JSON.
     """
-    lang_context = f"Language: {language}\n" if language else ""
+    # Strongly emphasize the programming language
+    if language:
+        lang_context = f"IMPORTANT: The code is written in {language.upper()}. Use {language}-specific syntax, conventions, and terminology. Do NOT confuse it with other languages.\n\n"
+    else:
+        lang_context = ""
+    
+    # Handle "N/A" or empty error messages
+    if error_message.upper() in ["N/A", "NA", "NONE", ""]:
+        error_context = "No error message provided. Only analyze if there is an actual bug in the code. If the code is correct and has no errors, state that clearly."
+    else:
+        error_context = f"Error Message:\n```\n{error_message}\n```"
     
     prompt = f"""You are an expert debugging assistant with deep technical knowledge. Analyze the following code and error message with technical precision and accuracy.
 
@@ -130,22 +140,26 @@ CRITICAL REQUIREMENTS:
 - Explain the root cause precisely: What exactly is wrong and why
 - Provide actionable fixes: Concrete code changes or debugging steps
 - Verify technical facts: Ensure your explanation is factually correct
+- If the code is correct and has no errors, state that clearly - do NOT invent errors
+- For syntax errors: Check for missing semicolons, brackets, parentheses, quotes, etc.
+- For Java: Statements must end with semicolons. Variable declarations like 'int x = 5' need a semicolon: 'int x = 5;'
 
 {lang_context}Code:
 ```{language or ''}
 {code}
 ```
 
-Error Message:
-```
-{error_message}
-```
+{error_context}
 
 TECHNICAL GUIDANCE:
+- Pay attention to the programming language specified above - use language-specific syntax and conventions
+- CHECK SYNTAX FIRST: Look for missing semicolons, brackets, parentheses, quotes, etc.
+- For Java: All statements must end with semicolons (;). Missing semicolon is a syntax error.
 - For "is not a function" errors: Distinguish between properties and methods correctly
 - For "undefined/null" errors: Explain the null/undefined state and why it occurred
 - For type errors: Explain the type mismatch precisely
 - For logic errors: Explain the incorrect logic flow
+- If no error message is provided, only report actual bugs in the code - do not invent problems
 - Severity: "high" = crashes/breaks execution, "medium" = incorrect behavior, "low" = minor issues
 
 Provide a JSON response with the following structure:

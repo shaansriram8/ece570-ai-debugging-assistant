@@ -11,6 +11,7 @@ from hf_client import call_multiple_models, build_analysis_prompt
 from aggregator import process_model_outputs
 from scorer import compute_heuristic_score
 from cache import cache
+from validator import validate_debugging_request
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -58,16 +59,16 @@ async def analyze_code(request: AnalyzeRequest) -> AnalyzeResponse:
     start_time = time.time()
     
     try:
-        # Get active models based on request parameters
-        if request.models:
-            # User specified specific models
-            models = request.models
-        elif request.mode == "quick":
-            # Quick mode: use only primary model
-            models = [settings.primary_model] if settings.primary_model else []
-        else:
-            # Detailed mode (default): use both models
-            models = get_active_models()
+        # Validate that this is actually a code debugging request
+        is_valid, validation_error = validate_debugging_request(request.code, request.error_message)
+        if not is_valid:
+            raise HTTPException(
+                status_code=400,
+                detail=validation_error
+            )
+        
+        # Get active Qwen models (always use all available models)
+        models = get_active_models()
         
         if not models:
             raise HTTPException(
@@ -99,6 +100,9 @@ async def analyze_code(request: AnalyzeRequest) -> AnalyzeResponse:
                 logger.warning(f"Model {model_name} returned error: {error}")
             elif text:
                 logger.info(f"Model {model_name} returned response (length: {len(text) if text else 0})")
+                # Log first 200 chars to help debug JSON extraction issues
+                if len(text) > 0:
+                    logger.debug(f"Model {model_name} response preview: {text[:200]}")
             else:
                 logger.warning(f"Model {model_name} returned None (no error message)")
         
@@ -150,6 +154,9 @@ async def analyze_code(request: AnalyzeRequest) -> AnalyzeResponse:
         logger.info(f"Analysis complete in {total_latency_ms:.2f}ms")
         return response
         
+    except HTTPException:
+        # Re-raise HTTP exceptions (like validation errors) as-is
+        raise
     except Exception as e:
         logger.error(f"Error in analyze_code: {str(e)}", exc_info=True)
         raise HTTPException(

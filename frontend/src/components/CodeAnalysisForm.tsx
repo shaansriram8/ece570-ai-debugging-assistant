@@ -13,7 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Zap, RotateCcw } from "lucide-react";
 
 interface CodeAnalysisFormProps {
-  onAnalyze: (code: string, errorMessage: string, language?: string, mode?: string) => void;
+  onAnalyze: (code: string, errorMessage: string, language?: string) => void;
   isLoading: boolean;
   onReset: () => void;
 }
@@ -36,7 +36,6 @@ export const CodeAnalysisForm = ({ onAnalyze, isLoading, onReset }: CodeAnalysis
   const [code, setCode] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [language, setLanguage] = useState("Auto-detect");
-  const [mode, setMode] = useState("detailed");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,8 +43,7 @@ export const CodeAnalysisForm = ({ onAnalyze, isLoading, onReset }: CodeAnalysis
       onAnalyze(
         code, 
         errorMessage, 
-        language === "Auto-detect" ? undefined : language,
-        mode
+        language === "Auto-detect" ? undefined : language
       );
     }
   };
@@ -54,7 +52,6 @@ export const CodeAnalysisForm = ({ onAnalyze, isLoading, onReset }: CodeAnalysis
     setCode("");
     setErrorMessage("");
     setLanguage("Auto-detect");
-    setMode("detailed");
     onReset();
   };
 
@@ -118,25 +115,6 @@ export const CodeAnalysisForm = ({ onAnalyze, isLoading, onReset }: CodeAnalysis
           </Select>
           <p className="text-xs text-muted-foreground">
             Helps provide more accurate analysis
-          </p>
-        </div>
-
-        {/* Analysis Mode Selector */}
-        <div className="space-y-2">
-          <Label htmlFor="mode" className="text-foreground font-medium">
-            Analysis Mode
-          </Label>
-          <Select value={mode} onValueChange={setMode} disabled={isLoading}>
-            <SelectTrigger id="mode" className="bg-background border-border">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-popover border-border">
-              <SelectItem value="quick">Quick - Single model (Faster)</SelectItem>
-              <SelectItem value="detailed">Detailed - Multiple models (More thorough)</SelectItem>
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-muted-foreground">
-            Quick mode uses one model for faster results. Detailed mode uses multiple models for better accuracy.
           </p>
         </div>
 

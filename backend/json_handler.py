@@ -99,6 +99,10 @@ def parse_model_output(text: str) -> Tuple[Optional[Dict[str, Any]], bool]:
     json_str = extract_json_from_text(text)
     
     if json_str is None:
+        # Log first 500 chars for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Failed to extract JSON from model output. First 500 chars: {text[:500]}")
         return None, False
     
     # Step 2: Try to parse

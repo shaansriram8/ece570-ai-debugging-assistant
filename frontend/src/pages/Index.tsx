@@ -27,7 +27,7 @@ const Index = () => {
   const [result, setResult] = useState<AnalysisResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleAnalyze = async (code: string, errorMessage: string, language?: string, mode?: string) => {
+  const handleAnalyze = async (code: string, errorMessage: string, language?: string) => {
     setIsLoading(true);
     setError(null);
     setResult(null);
@@ -44,10 +44,6 @@ const Index = () => {
         requestBody.language = language;
       }
       
-      if (mode) {
-        requestBody.mode = mode;
-      }
-      
       const response = await fetch(`${API_BASE_URL}/analyze`, {
         method: 'POST',
         headers: {
@@ -58,7 +54,13 @@ const Index = () => {
 
       if (!response.ok) {
         if (response.status === 400) {
-          throw new Error('Invalid request. Please check your inputs.');
+          // Try to get the detailed error message from the backend
+          try {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Invalid request. Please check your inputs.');
+          } catch {
+            throw new Error('Invalid request. Please check your inputs.');
+          }
         } else if (response.status === 500) {
           throw new Error('Backend service error. Please try again later.');
         } else {
