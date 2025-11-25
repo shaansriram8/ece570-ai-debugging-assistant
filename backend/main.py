@@ -7,10 +7,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings, get_active_models
 from models import AnalyzeRequest, AnalyzeResponse, ModelMetadata, HealthResponse
-from hf_client import call_multiple_models, build_analysis_prompt
+from hf_client import call_multiple_models, build_analysis_prompt, PROMPT_TEMPLATE_VERSION
 from aggregator import process_model_outputs
 from scorer import compute_heuristic_score
-from cache import cache
+from services.cache_service import response_cache
 from validator import validate_debugging_request
 
 # Configure logging
@@ -76,12 +76,39 @@ async def analyze_code(request: AnalyzeRequest) -> AnalyzeResponse:
                 detail="No models configured"
             )
         
-        # Check cache
-        cached_response = cache.get(request.code, request.error_message, models)
-        if cached_response:
-            logger.info("Returning cached response")
-            # Reconstruct response model from cache
-            return AnalyzeResponse(**cached_response)
+        # Build cache key from logical inputs
+        # Use sorted comma-separated list of models as model_name for cache key
+        model_name_str = ",".join(sorted(models))
+        prompt_version = PROMPT_TEMPLATE_VERSION
+        
+        cache_key = response_cache.make_key(
+            model_name=model_name_str,
+            code=request.code,
+            error_message=request.error_message,
+            language=request.language,
+            prompt_version=prompt_version,
+        )
+        
+        # Check cache before calling HF
+        if settings.cache_enabled:
+            cached = response_cache.get(cache_key)
+            if cached is not None:
+                # cached is a dict from model_dump(), reconstruct AnalyzeResponse
+                analyze_response = AnalyzeResponse(**cached)
+                # Ensure metadata.from_cache is set to True
+                if analyze_response.meta is not None:
+                    analyze_response.meta.from_cache = True
+                else:
+                    analyze_response.meta = ModelMetadata(from_cache=True)
+                
+                key_prefix = cache_key[:8]  # Log only first 8 chars of key
+                logger.info(f"Analyze cache hit for key=%s model=%s", key_prefix, model_name_str)
+                return analyze_response
+        
+        # Cache miss - log it
+        if settings.cache_enabled:
+            key_prefix = cache_key[:8]
+            logger.info(f"Analyze cache miss for key=%s model=%s", key_prefix, model_name_str)
         
         # Build prompt
         prompt = build_analysis_prompt(
@@ -129,7 +156,7 @@ async def analyze_code(request: AnalyzeRequest) -> AnalyzeResponse:
             per_model_latency_ms=per_model_latency,
             total_latency_ms=total_latency_ms,
             had_repair=had_repair,
-            from_cache=False,
+            from_cache=False,  # Explicitly set to False for cache miss
             backend_version=settings.api_version
         )
         
@@ -143,13 +170,9 @@ async def analyze_code(request: AnalyzeRequest) -> AnalyzeResponse:
             meta=meta
         )
         
-        # Cache the response
-        cache.set(
-            request.code,
-            request.error_message,
-            models,
-            response.model_dump()
-        )
+        # Cache the response only after successful response
+        if settings.cache_enabled:
+            response_cache.set(cache_key, response.model_dump())
         
         logger.info(f"Analysis complete in {total_latency_ms:.2f}ms")
         return response

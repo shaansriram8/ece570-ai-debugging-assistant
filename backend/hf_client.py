@@ -5,6 +5,9 @@ from typing import Dict, Any, Optional, List, Tuple
 import httpx
 from config import settings, get_model_config
 
+# Prompt template version for cache key generation
+PROMPT_TEMPLATE_VERSION = "v1"
+
 
 async def call_hf_model(
     model_name: str,

@@ -23,8 +23,9 @@ class Settings(BaseSettings):
     timeout_seconds: int = 30
     
     # Cache settings
-    cache_enabled: bool = True
-    cache_ttl_seconds: int = 3600
+    cache_enabled: bool = True  # Can be overridden via CACHE_ENABLED env var
+    cache_max_size: int = 512  # Can be overridden via CACHE_MAX_SIZE env var
+    cache_default_ttl_seconds: int = 3600  # Can be overridden via CACHE_DEFAULT_TTL_SECONDS env var
     
     # Evaluation settings
     evaluation_dataset_path: str = "evaluation_dataset.json"
