@@ -1,219 +1,111 @@
-# ECE 570 - AI Code Quality & Bug Explanation Assistant
+# AI Code Quality & Bug Explanation Assistant
 
-An AI-powered debugging assistant that analyzes source code and error messages to provide structured explanations and fix suggestions using multiple language models.
+An AI-powered debugging assistant that analyzes source code and error messages to provide structured explanations and fix suggestions. This project uses a FastAPI backend with Hugging Face Inference models and a React frontend.
 
 ## 🎯 Project Overview
 
-This project helps developers and students understand and fix code errors by:
+This tool helps developers and students understand and fix code errors by:
 - Providing clear **root-cause explanations** of bugs
 - Suggesting **concrete fixes** or debugging steps  
 - Assigning a **confidence score** (0-100) for the explanation
+- Using **multiple AI models** for verification
+- **Caching responses** for instant feedback on known issues
 
-**Target Users:** Junior software engineers, students in programming courses, developers encountering confusing errors.
+**Target Users:** Junior software engineers, students, and developers debugging complex errors.
 
 ## 📁 Project Structure
 
 ```
-ece570-ai-debugging-assistant/
-├── backend/              # FastAPI backend service
-│   ├── main.py          # FastAPI application entry point
-│   ├── models.py        # Pydantic request/response models
-│   ├── hf_client.py     # Hugging Face Inference API client
-│   ├── aggregator.py    # Multi-model response aggregation
-│   ├── json_handler.py  # JSON extraction and repair
-│   ├── scorer.py        # Quality scoring utilities
-│   ├── cache.py         # Response caching layer
-│   ├── evaluator.py     # Evaluation pipeline
-│   ├── requirements.txt # Python dependencies
-│   └── README.md        # Backend documentation
+ece570-final-project/
+├── backend/              # FastAPI backend service (Python)
+│   ├── main.py           # Application entry point
+│   ├── services/         # Core business logic (cache, etc.)
+│   ├── hf_client.py      # Hugging Face API client
+│   └── ...
 │
-├── frontend/            # React/TypeScript frontend
-│   ├── src/            # Source code
-│   ├── public/         # Static assets
-│   ├── package.json    # Node dependencies
-│   └── README.md       # Frontend documentation
-│
-├── cursor.md           # Project context and requirements
-├── LOVABLE_PROMPT.md   # Frontend generation prompt
-└── README.md           # This file
+└── frontend/             # React frontend application (TypeScript)
+    ├── src/              # UI source code
+    └── ...
 ```
 
-## 🚀 Quick Start
+## 🚀 Prerequisites
 
-### Backend Setup
+Before you begin, ensure you have the following installed:
+- **Python 3.8+** (for the backend)
+- **Node.js 18+** (for the frontend)
+- **npm** or **bun** (package manager)
 
-1. **Navigate to backend directory:**
-   ```bash
-   cd backend
-   ```
+**You will also need:**
+- A **Hugging Face API Key** (Free). Get one here: [https://huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
 
-2. **Install Python dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+## 🛠️ Setup Instructions
 
-3. **Configure environment variables:**
-   ```bash
-   cp env.example .env
-   # Edit .env and add your HF_API_KEY
-   ```
+### 1. Backend Setup
 
-4. **Run the backend:**
-   ```bash
-   uvicorn main:app --reload --host 0.0.0.0 --port 8000
-   ```
-   
-   The API will be available at `http://localhost:8000`
+1.  **Navigate to the backend directory:**
+    ```bash
+    cd backend
+    ```
 
-### Frontend Setup
+2.  **Create a virtual environment (recommended):**
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate  # On Windows: venv\Scripts\activate
+    ```
 
-1. **Navigate to frontend directory:**
-   ```bash
-   cd frontend
-   ```
+3.  **Install Python dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   # or
-   bun install
-   ```
+4.  **Configure Environment Variables:**
+    Create a `.env` file in the `backend/` directory:
+    ```bash
+    cp env.example .env
+    ```
+    Open `.env` and paste your Hugging Face API Key:
+    ```ini
+    HF_API_KEY=hf_your_token_here
+    ```
 
-3. **Configure API URL (optional):**
-   Create a `.env` file in the frontend directory:
-   ```bash
-   VITE_API_BASE_URL=http://localhost:8000
-   ```
-   (Defaults to `http://localhost:8000` if not set)
+5.  **Start the Backend Server:**
+    ```bash
+    uvicorn main:app --reload --host 0.0.0.0 --port 8000
+    ```
+    The backend will be running at `http://localhost:8000`.
 
-4. **Run the development server:**
-   ```bash
-   npm run dev
-   # or
-   bun dev
-   ```
-   
-   The frontend will be available at `http://localhost:5173` (or the port Vite assigns)
+### 2. Frontend Setup
 
-## 🔧 Technology Stack
+1.  **Navigate to the frontend directory (in a new terminal):**
+    ```bash
+    cd frontend
+    ```
 
-### Backend
-- **Framework:** FastAPI (Python)
-- **API Client:** httpx (async HTTP client)
-- **Validation:** Pydantic v2
-- **Server:** Uvicorn
-- **LLM API:** Hugging Face Inference API
+2.  **Install Node dependencies:**
+    ```bash
+    npm install
+    ```
 
-### Frontend
-- **Framework:** React 18 with TypeScript
-- **Build Tool:** Vite
-- **Styling:** Tailwind CSS
-- **UI Components:** shadcn/ui
-- **Routing:** React Router
-
-## 📚 Documentation
-
-- **Backend Documentation:** See [backend/README.md](backend/README.md)
-- **Backend Report:** See [backend/BACKEND_REPORT.md](backend/BACKEND_REPORT.md)
-- **Frontend Documentation:** See [frontend/README.md](frontend/README.md)
-- **Project Requirements:** See [cursor.md](cursor.md)
-
-## 🔑 Environment Variables
-
-### Backend (.env in backend/)
-- `HF_API_KEY` (required) - Your Hugging Face API key
-- `PRIMARY_MODEL` (optional) - Primary model name
-- `SECONDARY_MODEL` (optional) - Secondary model name
-- `CACHE_ENABLED` (optional) - Enable/disable caching
-
-### Frontend (.env in frontend/)
-- `VITE_API_BASE_URL` (optional) - Backend API URL (defaults to `http://localhost:8000`)
+3.  **Start the Frontend:**
+    ```bash
+    npm run dev
+    ```
+    The frontend will be running at `http://localhost:8000` (or `http://localhost:5173`).
 
 ## 📡 API Endpoints
 
-### `GET /health`
-Health check endpoint - returns backend status and configuration.
+- **`POST /analyze`**: Analyzes code and error message.
+- **`GET /health`**: Checks backend health and model configuration.
+- **Docs**: Visit `http://localhost:8000/docs` for interactive API documentation.
 
-### `POST /analyze`
-Main analysis endpoint - analyzes code and error message.
+## 🔧 Configuration
 
-**Request:**
-```json
-{
-  "code": "const arr = undefined;\nconst result = arr.map(x => x * 2);",
-  "error_message": "TypeError: Cannot read property 'map' of undefined",
-  "language": "javascript"
-}
-```
+You can tune the backend behavior in `backend/config.py` or via environment variables in `backend/.env`:
 
-**Response:**
-```json
-{
-  "explanation": "The variable 'arr' is undefined...",
-  "suggestion": "Initialize 'arr' as an empty array...",
-  "score": 85,
-  "severity": "high",
-  "bug_type": "null reference",
-  "meta": {
-    "models_used": ["01-ai/Yi-1.5B-Coder"],
-    "total_latency_ms": 1200.5,
-    "from_cache": false
-  }
-}
-```
+- `CACHE_ENABLED`: Enable/disable response caching (Default: True)
+- `CACHE_TTL_SECONDS`: How long to cache responses (Default: 3600s)
+- `PRIMARY_MODEL`: The main AI model to use (Default: Qwen2.5-Coder)
 
-## 🧪 Evaluation
-
-Run the evaluation pipeline:
-
-```bash
-cd backend
-python evaluator.py
-```
-
-This will:
-- Load examples from `evaluation_dataset.json`
-- Run analysis on each example
-- Compute metrics (valid JSON rate, scores, latency)
-- Save results to `evaluation_results.json`
-
-## 🏗️ Development
-
-### Backend Development
-- The backend uses async/await for parallel model calls
-- JSON extraction and repair handles malformed model outputs
-- Caching reduces redundant API calls
-
-### Frontend Development
-- The frontend is a thin client - all logic is in the backend
-- Uses React hooks for state management
-- Responsive design with Tailwind CSS
-
-## 📝 Code Attribution
-
-### Original Code
-- All backend logic in `backend/` - written by student
-- All frontend logic in `frontend/` - generated via lovable.dev
-
-### Adapted/Used Libraries
-- **FastAPI:** Web framework
-- **Pydantic:** Data validation
-- **httpx:** Async HTTP client
-- **Hugging Face Inference API:** Model inference service
-- **React:** Frontend framework
-- **shadcn/ui:** UI component library
-
-## 🔒 Security Notes
-
-- Never commit `.env` files containing API keys
-- The `.gitignore` file is configured to exclude sensitive files
-- Use `env.example` files to document required environment variables
-
-## 📄 License
+## 📝 License
 
 This is an academic project for ECE 570 at Purdue University.
-
-## 🤝 Contributing
-
-This is a course project. See `cursor.md` for project requirements and context.
-

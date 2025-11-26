@@ -69,6 +69,12 @@ def looks_like_error_message(text: str) -> bool:
     if len(text.strip()) <= 20:
         return True
     
+    # Check for common error type patterns (must come first to catch things like "ZeroDivisionError")
+    # Match error types that end with "Error" or "Exception" (e.g., "ZeroDivisionError", "ValueError", "KeyError")
+    error_type_pattern = r'\w*(Error|Exception|Warning|Fatal)\b'
+    if re.search(error_type_pattern, text, re.IGNORECASE):
+        return True
+    
     # Error message indicators
     error_indicators = [
         r'\b(Error|Exception|Traceback|Warning|Fatal|SyntaxError|TypeError|ReferenceError|RuntimeError)\b',
@@ -117,8 +123,11 @@ def validate_debugging_request(code: str, error_message: str) -> Tuple[bool, Opt
     elif not looks_like_error_message(error_message):
         # Error message might be optional or in a different format
         # But if it's clearly a general question, reject it
-        if looks_like_code(error_message):
-            # If error_message looks like code, it might be a mistake
+        
+        # IMPORTANT: Check if it looks like code ONLY if it doesn't look like an error message
+        # This prevents valid error messages from being rejected
+        if looks_like_code(error_message) and not looks_like_error_message(error_message):
+            # If error_message looks like code and definitely not an error, it might be a mistake
             return False, "The 'error_message' field should contain an error message or stack trace, not code."
         
         # If it's a plain question (and not short), reject it
