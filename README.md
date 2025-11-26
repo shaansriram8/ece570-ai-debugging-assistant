@@ -21,6 +21,7 @@ ece570-final-project/
 │   ├── main.py           # Application entry point
 │   ├── services/         # Core business logic (cache, etc.)
 │   ├── hf_client.py      # Hugging Face API client
+│   ├── evaluation_dataset.json # Dataset for evaluation
 │   └── ...
 │
 └── frontend/             # React frontend application (TypeScript)
@@ -106,6 +107,25 @@ You can tune the backend behavior in `backend/config.py` or via environment vari
 - `CACHE_TTL_SECONDS`: How long to cache responses (Default: 3600s)
 - `PRIMARY_MODEL`: The main AI model to use (Default: Qwen2.5-Coder)
 
+## ⚖️ Provenance & Attribution
+
+### Original Code
+- **Backend (`backend/`):** All Python source code (`main.py`, `hf_client.py`, `services/`, etc.) was written originally for this project with help from generative AI for debugging and help when writing boilerplate.
+- **Frontend (`frontend/`):** The React/TypeScript frontend application was written originally for this project with help from generative AI for UI.
+- **Evaluation Dataset (`backend/evaluation_dataset.json`):** Curated custom dataset for evaluating model performance.
+
+### External Libraries
+This project relies on the following open-source libraries:
+- **FastAPI** & **Uvicorn**: Web server framework.
+- **Pydantic**: Data validation.
+- **React** & **Shadcn UI**: Frontend UI components.
+- **Hugging Face Inference API**: Used for model inference (no local model weights required).
+
+## 📊 Data & Model Handling
+
+- **Models:** This project uses the Hugging Face Inference API. No large model weights need to be downloaded locally. The code automatically queries the configured models (`Qwen/Qwen2.5-Coder-7B-Instruct`) via the API.
+- **Data:** The evaluation dataset is included in `backend/evaluation_dataset.json`. No external download is required.
+
 ## 📝 License
 
-This is an academic project for ECE 570 at Purdue University.
+This is an academic project.

@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     # Using Qwen models optimized for code analysis and debugging
     # Router API supports specific models - check https://huggingface.co/docs/api-inference for available models
     primary_model: str = "Qwen/Qwen2.5-Coder-7B-Instruct"  # Qwen code-specific model, 7B parameters
-    secondary_model: str = "Qwen/Qwen2.5-Coder-1.5B-Instruct"  # Qwen code-specific model, 1.5B parameters (if available)
+    secondary_model: str = ""  # Default to single model (no secondary). Can be enabled via env var.
     
     # Model parameters
     temperature: float = 0.2
